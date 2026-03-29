@@ -1,0 +1,36 @@
+{
+  "questions": [
+    {
+      "question": "If you have 20% anti-geometry, 20% of your load transfer will transfer through what suspension member?",
+      "type": "multiple_choice",
+      "options": ["Control Arms", "Pushrods", "Springs", "Dampers"],
+      "answer": "Control Arms",
+      "category": "Load Transfer"
+    },
+    {
+      "question": "Does the coefficient of tire grip increase linearly with Fz?",
+      "type": "true_false",
+      "answer": "false",
+      "category": "Tires"
+    },
+    {
+      "question": "Aerodynamics loads scale with what power of velocity?",
+      "type": "multiple_choice",
+      "options": ["v", "v^2", "v^1/2", "v^3"],
+      "answer": "v^2",
+      "category": "Aerodynamics"
+    },
+    {
+      "question": "For a given acceleration, can you change the amount of load transfer by changing the spring stiffness only?",
+      "type": "true_false",
+      "answer": "false",
+      "category": "Load Transfer"
+    },
+    {
+      "question": "Slip angle is the angle between your tire contact patch's heading and ___.",
+      "type": "short_answer",
+      "answer": "vehicle heading",
+      "category": "Tires"
+    }
+  ]
+}
