@@ -308,9 +308,12 @@ class Quiz:
         return True
     
     def ask_multiple_choice(self, question_idx: int, question: Dict) -> bool:
-        """Ask a multiple choice question."""
-        options = question["options"]
+        """Ask a multiple choice question with shuffled answer options."""
+        options = question["options"].copy()  # Create a copy to avoid modifying original
         correct_answer = question["answer"]
+        
+        # Shuffle the answer options to randomize their display order
+        random.shuffle(options)
         
         for idx, option in enumerate(options, 1):
             print(f"  {idx}. {option}")
