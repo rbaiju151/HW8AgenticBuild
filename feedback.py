@@ -4,10 +4,11 @@ Tracks user feedback on questions to help determine which questions to serve in 
 Uses pickle for non-human readable storage.
 """
 
-import pickle
 import time
 from pathlib import Path
 from typing import Optional, Dict, List
+
+from data_storage import load_pickle_file, save_pickle_file
 
 
 def get_feedback_file_path() -> Path:
@@ -23,14 +24,7 @@ def load_feedback() -> dict:
         Nested dictionary: {question_id: {username: feedback_data}}
         Returns empty dict if file doesn't exist.
     """
-    feedback_file = get_feedback_file_path()
-    if feedback_file.exists():
-        try:
-            with open(feedback_file, 'rb') as f:
-                return pickle.load(f)
-        except (pickle.PickleError, EOFError):
-            return {}
-    return {}
+    return load_pickle_file(get_feedback_file_path())
 
 
 def save_feedback(feedback: dict) -> None:
@@ -43,17 +37,7 @@ def save_feedback(feedback: dict) -> None:
     Raises:
         IOError: If file cannot be written
     """
-    feedback_file = get_feedback_file_path()
-    try:
-        # Write to temporary file first for atomicity
-        temp_file = str(feedback_file) + '.tmp'
-        with open(temp_file, 'wb') as f:
-            pickle.dump(feedback, f)
-        # Replace original file
-        import shutil
-        shutil.move(temp_file, feedback_file)
-    except (IOError, OSError) as e:
-        raise IOError(f"Cannot save feedback file: {e}")
+    save_pickle_file(get_feedback_file_path(), feedback)
 
 
 def record_feedback(question_id: int, username: str, liked: bool, 

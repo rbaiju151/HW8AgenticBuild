@@ -257,11 +257,23 @@
    - Clears attempts on successful login
 
 ### Medium Priority
-1. Extract common pickle loading code to utility
-2. Use json or protobuf instead of pickle for safer deserialization
-3. Add constants for magic numbers (0.7, 0.3, 10)
+1. ✅ **FIXED** - Extract common pickle loading code to utility
+   - Created new [data_storage.py](data_storage.py) module with `load_pickle_file()` and `save_pickle_file()` functions
+   - Eliminates 75+ lines of duplicated code across [users.py](users.py), [statistics.py](statistics.py), [feedback.py](feedback.py)
+   - Provides consistent error handling, atomic writes, and temporary file safety across all modules
+   - Updated all three modules to import and use the shared functions
+   - **Benefit:** DRY principle, easier maintenance, consistent behavior
 
-### Low Priority
+2. ✅ **FIXED** - Add constants for magic numbers
+   - Added scoring constants to [statistics.py](statistics.py):
+     - `ACCURACY_WEIGHT = 0.7` (was hardcoded 0.7)
+     - `SPEED_WEIGHT = 0.3` (was hardcoded 0.3)
+     - `TIME_NORMALIZATION = 10` (was hardcoded 10 in denominator)
+     - `TIME_SCORE_MAX = 100` (was hardcoded 100)
+   - Updated `get_leaderboard_score()` to use named constants
+   - **Benefit:** Self-documenting code; easy to adjust scoring algorithm
+
+### Low Priority (Remaining)
 1. Clarify username casing behavior in docstring
 2. Make exception handling in feedback collection more informative
 3. Consider storing display usernames separately if casing needs to be preserved

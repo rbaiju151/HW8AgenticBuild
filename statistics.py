@@ -4,10 +4,17 @@ Tracks user performance metrics including accuracy, completion time, and categor
 Uses pickle for non-human readable storage.
 """
 
-import pickle
 import time
 from pathlib import Path
 from typing import Dict, List, Optional
+
+from data_storage import load_pickle_file, save_pickle_file
+
+# Leaderboard scoring constants
+ACCURACY_WEIGHT = 0.7  # 70% of score based on accuracy
+SPEED_WEIGHT = 0.3  # 30% of score based on speed
+TIME_NORMALIZATION = 10  # Normalize time values to reasonable scale
+TIME_SCORE_MAX = 100  # Maximum time score
 
 
 def get_statistics_file_path() -> Path:
@@ -23,14 +30,7 @@ def load_statistics() -> dict:
         Dictionary mapping usernames to their statistics.
         Returns empty dict if file doesn't exist.
     """
-    stats_file = get_statistics_file_path()
-    if stats_file.exists():
-        try:
-            with open(stats_file, 'rb') as f:
-                return pickle.load(f)
-        except (pickle.PickleError, EOFError):
-            return {}
-    return {}
+    return load_pickle_file(get_statistics_file_path())
 
 
 def save_statistics(statistics: dict) -> None:
@@ -43,17 +43,7 @@ def save_statistics(statistics: dict) -> None:
     Raises:
         IOError: If file cannot be written
     """
-    stats_file = get_statistics_file_path()
-    try:
-        # Write to temporary file first for atomicity
-        temp_file = str(stats_file) + '.tmp'
-        with open(temp_file, 'wb') as f:
-            pickle.dump(statistics, f)
-        # Replace original file
-        import shutil
-        shutil.move(temp_file, stats_file)
-    except (IOError, OSError) as e:
-        raise IOError(f"Cannot save statistics file: {e}")
+    save_pickle_file(get_statistics_file_path(), statistics)
 
 
 def get_user_stats(username: str) -> dict:
@@ -233,10 +223,10 @@ def get_leaderboard_score(username: str) -> float:
     
     # Average time per question (lower is better, so we invert it)
     avg_time = get_average_time_per_question(username)
-    time_score = 100 / (1 + avg_time / 10)  # Normalize time to a 0-100 scale
+    time_score = TIME_SCORE_MAX / (1 + avg_time / TIME_NORMALIZATION)
     
-    # Composite score: 70% accuracy + 30% speed
-    score = (accuracy * 0.7) + (time_score * 0.3)
+    # Composite score: ACCURACY_WEIGHT% accuracy + SPEED_WEIGHT% speed
+    score = (accuracy * ACCURACY_WEIGHT) + (time_score * SPEED_WEIGHT)
     
     return score
 

@@ -4,10 +4,10 @@ Handles user registration, login, and password verification.
 Uses pickle for storage obfuscation and hashlib for secure password hashing.
 """
 
-import pickle
 import hashlib
-import os
 from pathlib import Path
+
+from data_storage import load_pickle_file, save_pickle_file
 
 
 def hash_password(password: str) -> str:
@@ -36,14 +36,7 @@ def load_users() -> dict:
         Dictionary mapping usernames to hashed passwords.
         Returns empty dict if file doesn't exist.
     """
-    users_file = get_users_file_path()
-    if users_file.exists():
-        try:
-            with open(users_file, 'rb') as f:
-                return pickle.load(f)
-        except (pickle.PickleError, EOFError):
-            return {}
-    return {}
+    return load_pickle_file(get_users_file_path())
 
 
 def save_users(users: dict) -> None:
@@ -56,17 +49,7 @@ def save_users(users: dict) -> None:
     Raises:
         IOError: If file cannot be written
     """
-    users_file = get_users_file_path()
-    try:
-        # Write to temporary file first for atomicity
-        temp_file = str(users_file) + '.tmp'
-        with open(temp_file, 'wb') as f:
-            pickle.dump(users, f)
-        # Replace original file
-        import shutil
-        shutil.move(temp_file, users_file)
-    except (IOError, OSError) as e:
-        raise IOError(f"Cannot save users file: {e}")
+    save_pickle_file(get_users_file_path(), users)
 
 
 def user_exists(username: str) -> bool:
