@@ -39,10 +39,21 @@ def save_feedback(feedback: dict) -> None:
     
     Args:
         feedback: Nested dictionary of feedback data
+        
+    Raises:
+        IOError: If file cannot be written
     """
     feedback_file = get_feedback_file_path()
-    with open(feedback_file, 'wb') as f:
-        pickle.dump(feedback, f)
+    try:
+        # Write to temporary file first for atomicity
+        temp_file = str(feedback_file) + '.tmp'
+        with open(temp_file, 'wb') as f:
+            pickle.dump(feedback, f)
+        # Replace original file
+        import shutil
+        shutil.move(temp_file, feedback_file)
+    except (IOError, OSError) as e:
+        raise IOError(f"Cannot save feedback file: {e}")
 
 
 def record_feedback(question_id: int, username: str, liked: bool, 

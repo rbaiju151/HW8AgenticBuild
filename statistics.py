@@ -39,10 +39,21 @@ def save_statistics(statistics: dict) -> None:
     
     Args:
         statistics: Dictionary mapping usernames to their statistics
+        
+    Raises:
+        IOError: If file cannot be written
     """
     stats_file = get_statistics_file_path()
-    with open(stats_file, 'wb') as f:
-        pickle.dump(statistics, f)
+    try:
+        # Write to temporary file first for atomicity
+        temp_file = str(stats_file) + '.tmp'
+        with open(temp_file, 'wb') as f:
+            pickle.dump(statistics, f)
+        # Replace original file
+        import shutil
+        shutil.move(temp_file, stats_file)
+    except (IOError, OSError) as e:
+        raise IOError(f"Cannot save statistics file: {e}")
 
 
 def get_user_stats(username: str) -> dict:
@@ -82,6 +93,9 @@ def record_quiz_result(username: str, correct: int, total: int, time_taken: floa
         time_taken: Time taken to complete quiz in seconds
         category: Category of questions (or 'Mixed' if multiple)
         question_ids: List of question IDs that were asked
+        
+    Raises:
+        IOError: If statistics file cannot be written
     """
     statistics = load_statistics()
     username_lower = username.lower()

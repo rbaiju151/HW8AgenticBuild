@@ -52,10 +52,21 @@ def save_users(users: dict) -> None:
     
     Args:
         users: Dictionary mapping usernames to hashed passwords
+        
+    Raises:
+        IOError: If file cannot be written
     """
     users_file = get_users_file_path()
-    with open(users_file, 'wb') as f:
-        pickle.dump(users, f)
+    try:
+        # Write to temporary file first for atomicity
+        temp_file = str(users_file) + '.tmp'
+        with open(temp_file, 'wb') as f:
+            pickle.dump(users, f)
+        # Replace original file
+        import shutil
+        shutil.move(temp_file, users_file)
+    except (IOError, OSError) as e:
+        raise IOError(f"Cannot save users file: {e}")
 
 
 def user_exists(username: str) -> bool:
@@ -93,7 +104,24 @@ def authenticate(username: str, password: str) -> bool:
     return users[username_lower] == password_hash
 
 
-def register_user(username: str, password: str) -> bool:
+def validate_password(password: str) -> tuple:
+    """
+    Validate password meets security requirements.
+    
+    Args:
+        password: The password to validate
+        
+    Returns:
+        Tuple of (is_valid, error_message)
+    """
+    if len(password) < 8:
+        return False, "Password must be at least 8 characters long"
+    if len(password) > 128:
+        return False, "Password must be less than 128 characters"
+    return True, ""
+
+
+def register_user(username: str, password: str) -> tuple:
     """
     Register a new user with username and password.
     
@@ -102,18 +130,29 @@ def register_user(username: str, password: str) -> bool:
         password: The plaintext password for the new account
         
     Returns:
-        True if registration successful, False if user already exists
+        Tuple of (success, message). success=True if registration successful
     """
+    # Validate password
+    is_valid, error_msg = validate_password(password)
+    if not is_valid:
+        return False, error_msg
+    
     users = load_users()
     username_lower = username.lower()
     
     if username_lower in users:
-        return False
+        return False, "Username already exists"
     
     password_hash = hash_password(password)
     users[username_lower] = password_hash
-    save_users(users)
-    return True
+    
+    try:
+        save_users(users)
+        return True, "Registration successful"
+    except (IOError, OSError) as e:
+        return False, f"Failed to save user data: {e}"
+    except Exception as e:
+        return False, f"Unexpected error during registration: {e}"
 
 
 def get_display_username(username: str) -> str:

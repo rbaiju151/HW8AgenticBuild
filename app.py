@@ -411,8 +411,10 @@ class Quiz:
                 feedback.record_feedback(question_idx, self.username, liked=False)
                 self.user_feedback[question_idx] = False
                 print("Thanks for the feedback!")
-        except:
-            pass  # Skip feedback if any error
+        except (IOError, OSError) as e:
+            print(f"⚠️  Could not save feedback: {e}")
+        except Exception as e:
+            print(f"⚠️  Error processing feedback: {e}")
     
     def get_results(self) -> Dict:
         """Get quiz results."""
@@ -430,17 +432,22 @@ class Quiz:
     
     def save_results(self) -> None:
         """Save quiz results to statistics."""
-        results = self.get_results()
-        question_indices = [idx for idx, _ in self.questions]
-        
-        stats.record_quiz_result(
-            self.username,
-            results["correct"],
-            results["total"],
-            results["time_taken"],
-            results["category"],
-            question_indices
-        )
+        try:
+            results = self.get_results()
+            question_indices = [idx for idx, _ in self.questions]
+            
+            stats.record_quiz_result(
+                self.username,
+                results["correct"],
+                results["total"],
+                results["time_taken"],
+                results["category"],
+                question_indices
+            )
+        except IOError as e:
+            print(f"⚠️  Warning: Could not permanently save results: {e}")
+        except Exception as e:
+            print(f"⚠️  Warning: Error saving results: {e}")
     
     def display_results(self) -> None:
         """Display quiz results."""
@@ -497,11 +504,15 @@ def load_questions_with_handling() -> Optional[QuestionBank]:
 
 def handle_login() -> Optional[str]:
     """
-    Handle user login or registration.
+    Handle user login or registration with rate limiting.
     
     Returns:
         Username if successful, None if user wants to exit
     """
+    failed_attempts = {}  # Track failed login attempts per username
+    MAX_ATTEMPTS = 5
+    LOCKOUT_TIME = 300  # 5 minutes in seconds
+    
     while True:
         print("\n" + "=" * 70)
         print("QUIZ APPLICATION - LOGIN")
@@ -520,12 +531,38 @@ def handle_login() -> Optional[str]:
                 print("⚠️  Username and password cannot be empty")
                 continue
             
+            # Check login attempt rate limiting
+            username_lower = username.lower()
+            if username_lower in failed_attempts:
+                attempts, last_attempt_time = failed_attempts[username_lower]
+                time_since_last = time.time() - last_attempt_time
+                if attempts >= MAX_ATTEMPTS and time_since_last < LOCKOUT_TIME:
+                    wait_time = int(LOCKOUT_TIME - time_since_last)
+                    print(f"⚠️  Too many failed login attempts. Please try again in {wait_time} seconds.")
+                    continue
+                elif time_since_last >= LOCKOUT_TIME:
+                    # Reset attempts after lockout period
+                    del failed_attempts[username_lower]
+            
             if users.authenticate(username, password):
+                # Clear failed attempts on successful login
+                if username_lower in failed_attempts:
+                    del failed_attempts[username_lower]
                 print(f"✓ Welcome back, {username}!")
                 time.sleep(1)
                 return username
             else:
-                print("⚠️  Invalid username or password")
+                # Track failed attempt
+                if username_lower not in failed_attempts:
+                    failed_attempts[username_lower] = (1, time.time())
+                else:
+                    attempts, _ = failed_attempts[username_lower]
+                    failed_attempts[username_lower] = (attempts + 1, time.time())
+                attempts_left = MAX_ATTEMPTS - failed_attempts[username_lower][0]
+                if attempts_left > 0:
+                    print(f"⚠️  Invalid username or password ({attempts_left} attempts remaining)")
+                else:
+                    print(f"⚠️  Too many failed attempts. Account locked for {LOCKOUT_TIME // 60} minutes.")
         
         elif choice == '2':
             username = input("\nNew username: ").strip()
@@ -549,12 +586,19 @@ def handle_login() -> Optional[str]:
                 print("⚠️  Passwords do not match")
                 continue
             
-            if users.register_user(username, password):
-                print(f"✓ Account created successfully!")
-                time.sleep(1)
-                return username
-            else:
-                print("⚠️  Failed to create account")
+            # Register user and handle new return type
+            try:
+                success, message = users.register_user(username, password)
+                if success:
+                    print(f"✓ {message}")
+                    time.sleep(1)
+                    return username
+                else:
+                    print(f"⚠️  {message}")
+            except IOError as e:
+                print(f"⚠️  Database error: {e}")
+            except Exception as e:
+                print(f"⚠️  Unexpected error: {e}")
         
         elif choice == '3':
             return None

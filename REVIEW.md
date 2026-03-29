@@ -233,15 +233,33 @@
 ## Recommendations
 
 ### High Priority
-1. Replace bare `except:` clause with specific exception types [app.py](app.py#L428)
-2. Add file operation error handling for pickle saves [users.py](users.py#L38), etc.
-3. Add minimum password length validation
+1. ✅ **FIXED** - Replace bare `except:` clause with specific exception types [app.py](app.py#L428)
+   - Changed to catch `(IOError, OSError)` separately and `Exception` for other errors
+   - Now displays user-friendly error messages instead of silently failing
+   
+2. ✅ **FIXED** - Add minimum password length validation
+   - Added `validate_password()` function in [users.py](users.py) (minimum 8 characters, maximum 128)
+   - Updated `register_user()` to validate and return tuple with error messages
+   - Password validation occurs before account creation
+   
+3. ✅ **FIXED** - Add file operation error handling for pickle saves
+   - Updated `save_users()` in [users.py](users.py) with try-except and atomic write (temp file)
+   - Updated `save_statistics()` in [statistics.py](statistics.py) with try-except and atomic write
+   - Updated `save_feedback()` in [feedback.py](feedback.py) with try-except and atomic write
+   - Updated `record_quiz_result()` docstring to document IOError exception
+   - Updated `save_results()` in [app.py](app.py) to catch and display file write errors
+   
+4. ✅ **FIXED** - Add rate limiting to login attempts
+   - Implements max 5 failed attempts with 5-minute lockout in [app.py](app.py#L508)
+   - Tracks attempts per username with timestamp
+   - Shows remaining attempts to users
+   - Displays lockout message with wait time when exceeded
+   - Clears attempts on successful login
 
 ### Medium Priority
 1. Extract common pickle loading code to utility
-2. Add rate limiting to login attempts
-3. Use json or protobuf instead of pickle for safer deserialization
-4. Add constants for magic numbers (0.7, 0.3, 10)
+2. Use json or protobuf instead of pickle for safer deserialization
+3. Add constants for magic numbers (0.7, 0.3, 10)
 
 ### Low Priority
 1. Clarify username casing behavior in docstring
