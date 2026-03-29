@@ -2,6 +2,13 @@
 User feedback module.
 Tracks user feedback on questions to help determine which questions to serve in the future.
 Uses pickle for non-human readable storage.
+
+Design Notes:
+- Feedback is optional and non-blocking (errors don't affect quiz)
+- Nested structure: {question_id: {username: feedback_data}}
+  * Allows finding all feedback for a question, or all feedback from a user
+- Each feedback record includes: liked (bool), difficulty (optional), notes (optional), timestamp
+- Can be used to build recommendation system or identify poorly-received questions
 """
 
 import time

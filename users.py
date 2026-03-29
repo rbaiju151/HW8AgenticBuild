@@ -2,6 +2,11 @@
 User authentication management module.
 Handles user registration, login, and password verification.
 Uses pickle for storage obfuscation and hashlib for secure password hashing.
+
+Design Notes:
+- Usernames are case-insensitive (stored in lowercase) to prevent collisions
+- Passwords are hashed with SHA-256 before storage
+- Data is persisted in binary pickle format for obfuscation
 """
 
 import hashlib
@@ -140,16 +145,21 @@ def register_user(username: str, password: str) -> tuple:
 
 def get_display_username(username: str) -> str:
     """
-    Get the display version of a username (preserves original casing).
+    Get the stored username for a given username (case-insensitive lookup).
+    
+    All usernames are stored in lowercase for case-insensitive comparison.
+    This prevents username collisions ("John" and "john" treated as same user).
+    If you need to preserve original casing, usernames should be normalized
+    or a separate display_username field should be stored.
     
     Args:
-        username: The username to look up
+        username: The username to look up (case-insensitive)
         
     Returns:
-        The username if it exists, None otherwise
+        The stored username (lowercase) if it exists, None otherwise
     """
     users = load_users()
-    # Find the original casing
+    # Find the stored username (always lowercase)
     for stored_user in users.keys():
         if stored_user == username.lower():
             return stored_user

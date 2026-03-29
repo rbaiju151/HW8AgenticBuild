@@ -399,7 +399,11 @@ class Quiz:
                 print(f"⚠️  Error processing answer: {e}")
     
     def ask_feedback(self, question_idx: int, question: Dict) -> None:
-        """Ask user for feedback on a question."""
+        """
+        Ask user for feedback on a question.
+        
+        Feedback is optional - non-critical errors are logged but don't affect quiz flow.
+        """
         try:
             response = input("\nWas this question helpful? (y/n/skip): ").strip().lower()
             
@@ -411,10 +415,13 @@ class Quiz:
                 feedback.record_feedback(question_idx, self.username, liked=False)
                 self.user_feedback[question_idx] = False
                 print("Thanks for the feedback!")
+            # Else: user skipped feedback (valid response)
         except (IOError, OSError) as e:
-            print(f"⚠️  Could not save feedback: {e}")
+            print(f"⚠️  Warning: Could not save feedback for question {question_idx}: {e}")
+            print("   (Quiz progress was saved, but feedback was not)")
         except Exception as e:
-            print(f"⚠️  Error processing feedback: {e}")
+            print(f"⚠️  Warning: Error processing feedback for question {question_idx}: {e}")
+            print("   (This is non-critical and won't affect your quiz results)")
     
     def get_results(self) -> Dict:
         """Get quiz results."""

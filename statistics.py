@@ -2,6 +2,13 @@
 Statistics tracking module.
 Tracks user performance metrics including accuracy, completion time, and category-specific stats.
 Uses pickle for non-human readable storage.
+
+Design Notes on Scoring:
+- Accuracy Weight (70%): Emphasizes correctness of answers
+- Speed Weight (30%): Encourages fast quiz completion
+- Time Normalization (10): Converts average time/question to reasonable scale
+  * Example: If avg time is 10 seconds/question, time_score = 100 / (1 + 10/10) = 50/100
+  * This balances the scoring so both components meaningfully contribute
 """
 
 import time
